@@ -1,18 +1,45 @@
-# Ous50 Tap
+# ous50 Homebrew Tap
 
-## How do I install these formulae?
+Homebrew tap maintained by [ous50](https://github.com/ous50).
 
-`brew install ous50/tap/<formula>`
+## Casks
 
-Or `brew tap ous50/tap` and then `brew install <formula>`.
+<!-- BEGIN GENERATED CASKS -->
+| Cask | Version | Description | Platforms | Homepage |
+| --- | --- | --- | --- | --- |
+| [`maaend`](Casks/maaend.rb) | `2.23.0` | An Arknights:Endfield automation helper based on vision AI. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
+<!-- END GENERATED CASKS -->
 
-Or, in a `brew bundle` `Brewfile`:
+## Formulae
+
+<!-- BEGIN GENERATED FORMULAE -->
+| Formula | Version | Description | License | Homepage |
+| --- | --- | --- | --- | --- |
+<!-- END GENERATED FORMULAE -->
+
+## Installation
+
+Install MaaEnd directly:
+
+```bash
+brew install --cask ous50/tap/maaend
+```
+
+Alternatively, add the tap first:
+
+```bash
+brew tap ous50/tap
+brew install --cask maaend
+```
+
+To use it in a `Brewfile`:
 
 ```ruby
 tap "ous50/tap"
-brew "<formula>"
+cask "maaend"
 ```
 
 ## Documentation
 
-`brew help`, `man brew` or check [Homebrew's documentation](https://docs.brew.sh).
+Run `brew help`, read `man brew`, or see the
+[Homebrew documentation](https://docs.brew.sh).
