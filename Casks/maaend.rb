@@ -1,7 +1,6 @@
 # Documentation: https://docs.brew.sh/Cask-Cookbook
 # PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
 cask "maaend" do
-  conflicts_with cask: "maaend-beta"
   arch arm: "aarch64", intel: "x86_64"
   os macos: "macos", linux: "linux"
   downloaded_file_format = on_system_conditional macos: "dmg", linux: "tar.gz"
@@ -65,4 +64,5 @@ cask "maaend" do
   end
 
   auto_updates true
+  conflicts_with cask: "maaend-beta"
 end
