@@ -36,6 +36,7 @@ cask "maaend" do
         EOS
       end
     end
+    "zh_CN"
   end
   language "en", default: true do
     desc "An Arknights:Endfield automation helper based on vision AI."
@@ -49,6 +50,7 @@ cask "maaend" do
         EOS
       end
     end
+    "en_US"
   end
 
   url "https://github.com/MaaEnd/MaaEnd/releases/download/v#{version}/MaaEnd-#{os}-#{arch}-v#{version}.#{downloaded_file_format}"

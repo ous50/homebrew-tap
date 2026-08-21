@@ -1,0 +1,43 @@
+name: Update README package list
+
+on:
+  workflow_run:
+    workflows: ["brew test-bot"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  update-readme:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out tested commit
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # workflow_run is restricted below to successful pushes to this repo's main.
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@b35a29a0f83ee8b8ca07b219fc8db3d7bb88ab49 # 2026.08.10.2
+
+      - name: Generate README package tables
+        run: python3 scripts/update_readme.py
+
+      - name: Commit README update
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update package list"
+          git push origin HEAD:main
