@@ -1,7 +1,7 @@
 # Documentation: https://docs.brew.sh/Cask-Cookbook
 # PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
-cask "maaend" do
-  conflicts_with cask: "maaend-beta"
+cask "maaend-beta" do
+  conflicts_with cask: "maaend"
   arch arm: "aarch64", intel: "x86_64"
   os macos: "macos", linux: "linux"
   downloaded_file_format = on_system_conditional macos: "dmg", linux: "tar.gz"
@@ -27,7 +27,7 @@ cask "maaend" do
   end
 
   language "zh", "CN" do
-    desc "终末地小助手：基于视觉 AI 的「明日方舟：终末地」自动化工具"
+    desc "终末地小助手Beta版：基于视觉 AI 的「明日方舟：终末地」自动化工具"
     on_macos do
       caveats do
         <<~EOS
@@ -40,7 +40,7 @@ cask "maaend" do
     "zh_CN"
   end
   language "en", default: true do
-    desc "An Arknights:Endfield automation helper based on vision AI."
+    desc "An Arknights:Endfield automation helper based on vision AI, in beta version."
     on_macos do
       # This prints a helpful message to the user at the very end
       caveats do
@@ -61,7 +61,17 @@ cask "maaend" do
   # Documentation: https://docs.brew.sh/Brew-Livecheck
   livecheck do
     url :homepage
-    strategy :github_latest
+    strategy :github_releases do |json|
+      json.map do |release|
+        # Remove or comment out the default line that skips pre-releases:
+        # next if release["draft"] || release["prerelease"]
+        
+        next if release["draft"] # Still skip unfinished drafts
+
+        # Return the version tag (e.g., "v1.0.0-beta.1" -> "1.0.0-beta.1")
+        release["tag_name"]&.delete_prefix("v")
+      end
+    end
   end
 
   auto_updates true
