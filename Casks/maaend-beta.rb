@@ -1,7 +1,6 @@
 # Documentation: https://docs.brew.sh/Cask-Cookbook
 # PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
 cask "maaend-beta" do
-  conflicts_with cask: "maaend"
   arch arm: "aarch64", intel: "x86_64"
   os macos: "macos", linux: "linux"
   downloaded_file_format = on_system_conditional macos: "dmg", linux: "tar.gz"
@@ -65,7 +64,6 @@ cask "maaend-beta" do
       json.map do |release|
         # Remove or comment out the default line that skips pre-releases:
         # next if release["draft"] || release["prerelease"]
-        
         next if release["draft"] # Still skip unfinished drafts
 
         # Return the version tag (e.g., "v1.0.0-beta.1" -> "1.0.0-beta.1")
@@ -75,4 +73,5 @@ cask "maaend-beta" do
   end
 
   auto_updates true
+  conflicts_with cask: "maaend"
 end
