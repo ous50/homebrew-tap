@@ -52,6 +52,8 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
           git add README.md
           git commit -m "docs: update package list"
+          # Another run may have pushed while we were generating; rebase on top.
+          git pull --rebase origin main || true
           git push origin HEAD:main
 
       - name: Clean up local tap registration
