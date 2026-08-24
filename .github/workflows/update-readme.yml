@@ -30,8 +30,10 @@ jobs:
       - name: Register tap with Homebrew
         run: |
           # actions/checkout puts the repo in $PWD, but Homebrew only loads
-          # casks from inside a tap directory. Register the checkout as the
-          # ous50/tap tap so brew can resolve `ous50/tap/<token>`.
+          # casks from inside a tap directory. Replace any existing ous50/tap
+          # registration and point it at the checkout so brew can resolve
+          # `ous50/tap/<token>`.
+          brew untap ous50/tap --force 2>/dev/null || true
           brew tap ous50/tap "$PWD"
 
       - name: Generate README package tables
