@@ -41,18 +41,43 @@ def platforms(text: str, kind: str) -> str:
     return ", ".join(supported)
 
 
-def brew_metadata(kind: str, path: Path) -> dict:
-    option = "--cask" if kind == "Casks" else "--formula"
+def tap_token() -> str:
+    """Infer the tap token (e.g. ous50/tap) from the git remote."""
     result = subprocess.run(
-        [BREW, "info", "--json=v2", option, str(path)],
+        ["git", "remote", "get-url", "origin"],
         cwd=ROOT,
-        check=True,
         capture_output=True,
         text=True,
     )
+    if result.returncode == 0:
+        url = result.stdout.strip()
+        match = re.search(r"[:/](?P<user>[^/]+)/homebrew-(?P<tap>[^/]+?)(?:\.git)?$", url)
+        if match:
+            return f"{match.group('user')}/{match.group('tap')}"
+    return "ous50/tap"
+
+
+TAP = tap_token()
+
+
+def brew_metadata(kind: str, path: Path) -> dict:
+    option = "--cask" if kind == "Casks" else "--formula"
+    token = f"{TAP}/{path.stem}"
+    result = subprocess.run(
+        [BREW, "info", "--json=v2", option, token],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"brew info failed for {token} ({kind}):\n"
+            f"stdout: {result.stdout}\n"
+            f"stderr: {result.stderr}"
+        )
     items = json.loads(result.stdout).get("casks" if kind == "Casks" else "formulae", [])
     if len(items) != 1:
-        raise RuntimeError(f"Expected one package in {path}, got {len(items)}")
+        raise RuntimeError(f"Expected one package for {token}, got {len(items)}")
     return items[0]
 
 
