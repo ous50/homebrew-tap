@@ -66,7 +66,6 @@ cask "maaend-beta" do
     end
   end
 
-
   auto_updates true
   conflicts_with cask: "maaend"
 end
