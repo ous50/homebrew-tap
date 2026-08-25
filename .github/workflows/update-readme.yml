@@ -17,12 +17,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Check out tested commit
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # workflow_run is restricted below to successful pushes to this repo's main.
-          ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 0
+      # - name: Check out tested commit
+      #   uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      #   with:
+      #     # workflow_run is restricted below to successful pushes to this repo's main.
+      #     ref: ${{ github.event.workflow_run.head_sha }}
+      #     fetch-depth: 0
 
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@8f3d1ec8a696b3b9d9a6c3696b6c73033cab69e4 # 2026.08.14.1
