@@ -58,17 +58,14 @@ cask "maaend-beta" do
   # Documentation: https://docs.brew.sh/Brew-Livecheck
   livecheck do
     url :homepage
-    strategy :github_releases do |json|
-      json.map do |release|
-        # Remove or comment out the default line that skips pre-releases:
-        # next if release["draft"] || release["prerelease"]
-        next if release["draft"] # Still skip unfinished drafts
-
-        # Return the version tag (e.g., "v1.0.0-beta.1" -> "1.0.0-beta.1")
-        release["tag_name"]&.delete_prefix("v")
+    strategy :git do |tags|
+      tags.filter_map do |tag|
+        # Matches versions like 2.26.0-beta.5 or v2.26.0-beta.5
+        tag[/^v?(\d+(?:\.\d+)+(?:-beta\.\d+)?)$/i, 1]
       end
     end
   end
+
 
   auto_updates true
   conflicts_with cask: "maaend"
