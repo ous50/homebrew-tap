@@ -56,6 +56,6 @@ jobs:
           git pull --rebase origin main || true
           git push origin HEAD:main
 
-      - name: Clean up local tap registration
-        if: always()
-        run: brew untap ous50/tap --force 2>/dev/null || true
+      # - name: Clean up local tap registration
+      #   if: always()
+      #   run: brew untap ous50/tap --force 2>/dev/null || true
