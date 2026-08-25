@@ -8,7 +8,7 @@ Homebrew tap maintained by [ous50](https://github.com/ous50).
 | Cask | Version | Description | Platforms | Homepage |
 | --- | --- | --- | --- | --- |
 | [`maaend-beta`](Casks/maaend-beta.rb) | `2.23.0` | An Arknights:Endfield automation helper based on vision AI, in beta version. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
-| [`maaend`](Casks/maaend.rb) | `2.23.0` | An Arknights:Endfield automation helper based on vision AI. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
+| [`maaend`](Casks/maaend.rb) | `2.25.0` | An Arknights:Endfield automation helper based on vision AI. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
 <!-- END GENERATED CASKS -->
 
 ## Formulae
