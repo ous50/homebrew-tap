@@ -52,7 +52,7 @@ cask "maaend-beta" do
   end
 
   url "https://github.com/MaaEnd/MaaEnd/releases/download/v#{version}/MaaEnd-#{os}-#{arch}-v#{version}.#{downloaded_file_format}"
-  name "MaaEnd"
+  name "MaaEnd Beta"
   homepage "https://github.com/MaaEnd/MaaEnd"
 
   # Documentation: https://docs.brew.sh/Brew-Livecheck
