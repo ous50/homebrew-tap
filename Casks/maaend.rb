@@ -1,5 +1,3 @@
-# Documentation: https://docs.brew.sh/Cask-Cookbook
-# PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
 cask "maaend" do
   arch arm: "aarch64", intel: "x86_64"
   os macos: "macos", linux: "linux"
