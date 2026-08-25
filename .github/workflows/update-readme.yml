@@ -14,6 +14,9 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    container:
+              image: ghcr.io/homebrew/brew:main
+              options: --privileged
     permissions:
       contents: write
     steps:
@@ -26,6 +29,8 @@ jobs:
 
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@8f3d1ec8a696b3b9d9a6c3696b6c73033cab69e4 # 2026.08.14.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Register tap with Homebrew
         run: |
