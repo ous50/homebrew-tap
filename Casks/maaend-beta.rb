@@ -3,11 +3,11 @@ cask "maaend-beta" do
   os macos: "macos", linux: "linux"
   downloaded_file_format = on_system_conditional macos: "dmg", linux: "tar.gz"
 
-  version "2.26.0-beta.6"
-  sha256  arm:          "ae24764ebfac20e36a546b88069a0aefce8ad15a599182531ffbbae2a99dd956",
-          intel:        "ea70a85103b3ad4b32b6a82512014eef18d8929ce1fa403fe3d8c8e09255e7b8",
-          arm64_linux:  "d85989299475bd1ed42b9ef6ebfdd01212fc464a39c07c140a123653f43faf17",
-          x86_64_linux: "16bf70ebfce8fa9a05bf43876fae090401020346f7c3c241d47b4448f56ce541"
+  version "2.27.0-beta.4"
+  sha256  arm:          "6757b5ad44f685c0999699fa1138ae3a4ee26efadaf37754fda304c528d40bdf",
+          intel:        "f4b612efa9958ffd33aea29a097da4fbe46b0d69df866b5911db4c2794f6cae2",
+          arm64_linux:  "cf9a48b5624a81f8d2545fac3e9e70b279b28dc447e1dde996e2cfa5fdeffb2c",
+          x86_64_linux: "9160d3eeede73b09749fbddaf91a5acf3eac35cb814a1ed04528703f0d183f9e"
 
   on_macos do
     app "MaaEnd.app"
