@@ -17,6 +17,7 @@ defaults:
 
 jobs:
   autobump:
+    environment: github-actions
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -34,7 +35,7 @@ jobs:
           TAP_BOT_TOKEN: ${{ secrets.TAP_BOT_TOKEN }}
         run: |
           if [[ -z "$TAP_BOT_TOKEN" ]]; then
-            echo '::error::Add the TAP_BOT_TOKEN Actions secret. See docs/automation.md.'
+            echo '::error::Add TAP_BOT_TOKEN to the github-actions environment secrets. See docs/automation.md.'
             exit 1
           fi
 
