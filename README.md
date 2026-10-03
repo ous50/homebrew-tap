@@ -42,5 +42,8 @@ cask "maaend"
 
 ## Documentation
 
+See [cask update automation](docs/automation.md) for token setup, PR refreshes,
+validation, and automatic rebase-and-merge behavior.
+
 Run `brew help`, read `man brew`, or see the
 [Homebrew documentation](https://docs.brew.sh).

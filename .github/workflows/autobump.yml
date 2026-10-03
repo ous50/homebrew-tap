@@ -1,41 +1,75 @@
-# brew tap-new uses this file to generate an autobump workflow for the new tap
 name: brew bump
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-    paths:
-      - .github/workflows/autobump.yml
   schedule:
-    # Every day at 21:0 UTC
+    # Every 30 minutes.
     - cron: 0,30 * * * *
 
 permissions: {}
 
 defaults:
   run:
-    shell: bash -xeuo pipefail {0}
+    shell: bash -euo pipefail {0}
 
 jobs:
   autobump:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cask: [maaend, maaend-beta]
+    concurrency:
+      group: cask-update-${{ matrix.cask }}
+      cancel-in-progress: false
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
+      - name: Check automation token
+        env:
+          TAP_BOT_TOKEN: ${{ secrets.TAP_BOT_TOKEN }}
+        run: |
+          if [[ -z "$TAP_BOT_TOKEN" ]]; then
+            echo '::error::Add the TAP_BOT_TOKEN Actions secret. See docs/automation.md.'
+            exit 1
+          fi
+
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478 # 2026.09.28.1
+        with:
+          token: ${{ secrets.TAP_BOT_TOKEN }}
 
-      - name: Set up git
-        id: git_setup
-        uses: Homebrew/actions/git-user-config@e99025eb970cfa124b8284a35463d87426917478 # 2026.09.28.1
+      - name: Start from current main
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
 
-      - name: Bump formulae
+      - name: Generate cask update
+        id: update
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_GIT_COMMITTER_NAME: ${{ steps.git_setup.outputs.name }}
-          HOMEBREW_GIT_COMMITTER_EMAIL: ${{ steps.git_setup.outputs.email }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.TAP_BOT_TOKEN }}
+          CASK: ${{ matrix.cask }}
           TAP_NAME: ${{ steps.set-up-homebrew.outputs.tap-name }}
-        run: brew bump --no-fork --open-pr --bump-synced --tap="$TAP_NAME"
+        run: python3 scripts/cask_automation.py prepare "$CASK" "$TAP_NAME"
+
+      - name: Create or refresh the cask PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ secrets.TAP_BOT_TOKEN }}
+          path: ${{ steps.set-up-homebrew.outputs.repository-path }}
+          base: main
+          branch: automation/${{ matrix.cask }}
+          add-paths: Casks/${{ matrix.cask }}.rb
+          commit-message: '${{ matrix.cask }} ${{ steps.update.outputs.version }}'
+          title: '${{ matrix.cask }} ${{ steps.update.outputs.version }}'
+          body: |
+            Generated from current main using Homebrew livecheck and bump-cask-pr.
+            New releases refresh this PR while it remains open.
+            Automatic rebase-and-merge requires successful tests on this exact commit and only version/checksum changes.
