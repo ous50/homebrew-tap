@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   merge:
+    environment: github-actions
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' &&

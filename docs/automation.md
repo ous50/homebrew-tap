@@ -19,7 +19,9 @@ Create a fine-grained personal access token restricted to `ous50/homebrew-tap`:
 - Pull requests: read and write (PR creation and metadata).
 - Actions: read (verify the test run and its jobs).
 
-Save it as the repository Actions **secret** `TAP_BOT_TOKEN`. Do not paste it in
+Save it as the **secret** `TAP_BOT_TOKEN` in the repository's `github-actions`
+environment (Settings > Environments > github-actions > Environment secrets).
+Both write-enabled jobs explicitly use this environment. Do not paste it in
 an issue, PR, or chat. Set an expiry and replace the secret when rotating it.
 The built-in GITHUB_TOKEN is used for read-only testing. The custom token makes
 PR changes trigger CI without the workflow-approval prompt, and merged updates
