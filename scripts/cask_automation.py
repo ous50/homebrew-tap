@@ -128,10 +128,7 @@ def eligible(pr, run, repository):
     )
 
 
-def merge():
-    event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
-    # An old successful event must not approve a failed/in-progress rerun.
-    run = api(f'actions/runs/{event["workflow_run"]["id"]}')
+def merge_run(run):
     repository = os.environ['GITHUB_REPOSITORY']
     owner = repository.split('/')[0]
     query = urlencode({'state': 'open', 'base': 'main', 'head': f'{owner}:{run["head_branch"]}'})
@@ -174,6 +171,25 @@ def merge():
     if not result.get('merged'):
         raise ValueError(f'Merge refused: {result}')
     print(f'Rebased and merged #{number} at tested head {head}')
+
+
+def merge():
+    event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+    if 'workflow_run' in event:
+        # An old successful event must not approve a failed/in-progress rerun.
+        merge_run(api(f'actions/runs/{event["workflow_run"]["id"]}'))
+        return
+    # Reconcile after transient merge blockers, without creating new commits or PRs.
+    owner = os.environ['GITHUB_REPOSITORY'].split('/')[0]
+    for cask in CASKS:
+        query = urlencode({'state': 'open', 'base': 'main', 'head': f'{owner}:automation/{cask}'})
+        prs = api(f'pulls?{query}')
+        if len(prs) != 1:
+            continue
+        query = urlencode({'event': 'pull_request', 'head_sha': prs[0]['head']['sha'], 'per_page': 1})
+        runs = api(f'actions/workflows/tests.yml/runs?{query}')['workflow_runs']
+        if runs:
+            merge_run(api(f'actions/runs/{runs[0]["id"]}'))
 
 
 if __name__ == '__main__':

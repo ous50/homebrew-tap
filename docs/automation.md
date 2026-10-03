@@ -52,3 +52,7 @@ the merge. If main advances, the updater refreshes the pending branch and CI run
 again. Failed checks, changed app definitions, drafts, or blocked reviews never
 auto-merge. Checks verify downloaded bytes for all four targets; they do not
 install or launch the app. GitHub branch rules still apply.
+
+The merger also retries every 30 minutes and supports manual dispatch. This
+handles temporary mergeability delays or a review/check that becomes unblocked
+after the main test run finishes, without opening another PR.

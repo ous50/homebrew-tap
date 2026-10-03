@@ -1,6 +1,9 @@
 name: Merge tested cask updates
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15,45 * * * *'
   workflow_run:
     workflows: ['brew test-bot']
     types: [completed]
@@ -15,11 +18,12 @@ concurrency:
 jobs:
   merge:
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       (github.event.workflow_run.head_branch == 'automation/maaend' ||
-       github.event.workflow_run.head_branch == 'automation/maaend-beta')
+       github.event.workflow_run.head_branch == 'automation/maaend-beta'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
