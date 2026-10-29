@@ -5,6 +5,12 @@ It starts from current main, uses each cask's existing livecheck definition, and
 lets `brew bump-cask-pr --write-only` generate versions and all four checksums.
 Beta channel selection is unchanged (the existing livecheck also accepts stable releases).
 
+Before creating or refreshing a PR, the workflow clears the global Git HTTP
+authorization header installed by `setup-homebrew`. The PR action configures its
+own repository-local header; keeping both would make GitHub reject fetches and
+pushes with `Duplicate header: "Authorization"` (HTTP 400). The global key is left
+with an empty value so Homebrew's post-job credential cleanup still succeeds.
+
 The fixed branches `automation/maaend` and `automation/maaend-beta` each have at
 most one pending PR. New releases replace the proposed update in that same PR.
 Base changes refresh the generated branch too. These branches are bot-owned;
