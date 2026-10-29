@@ -60,6 +60,13 @@ jobs:
           TAP_NAME: ${{ steps.set-up-homebrew.outputs.tap-name }}
         run: python3 scripts/cask_automation.py prepare "$CASK" "$TAP_NAME"
 
+      - name: Hand off Git authentication to the PR action
+        run: |
+          # setup-homebrew sets a global header; create-pull-request adds a local one.
+          # Clear the global value to avoid duplicate Authorization headers, but keep
+          # the key so setup-homebrew's post-job --unset-all still succeeds.
+          git config --global --replace-all "http.${GITHUB_SERVER_URL}/.extraheader" ""
+
       - name: Create or refresh the cask PR
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
