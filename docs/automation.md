@@ -1,6 +1,8 @@
 # Cask update automation
 
-The `brew bump` workflow runs every 30 minutes, on pushes to main, and manually.
+The `brew bump` workflow runs on a 30-minute schedule, on pushes to main, after
+successful `Update README package list` runs on main, and manually. GitHub may
+delay scheduled runs, so the schedule is a fallback rather than a merge deadline.
 It starts from current main, uses each cask's existing livecheck definition, and
 lets `brew bump-cask-pr --write-only` generate versions and all four checksums.
 Beta channel selection is unchanged (the existing livecheck also accepts stable releases).
@@ -16,6 +18,13 @@ most one pending PR. New releases replace the proposed update in that same PR.
 Base changes refresh the generated branch too. These branches are bot-owned;
 put manual changes on another branch. After merging, the next release opens a
 new PR. Unchanged checks do not create commits or PRs.
+
+README updates use `GITHUB_TOKEN`, whose pushes do not trigger another workflow.
+The explicit README completion trigger refreshes pending cask PRs against the
+new main commit so they can be tested and merged without waiting for the next
+scheduled bump. Failed or skipped README runs do not start the updater. An
+unchanged README can cause one extra check, but unchanged casks produce no new
+commits or PR events, so the workflow chain stops there.
 
 ## One-time setup
 

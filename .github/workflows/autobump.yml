@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+  # README commits use GITHUB_TOKEN, so their pushes do not trigger this workflow.
+  workflow_run:
+    workflows: ['Update README package list']
+    types: [completed]
+    branches: [main]
   schedule:
     # Every 30 minutes.
     - cron: 0,30 * * * *
@@ -17,6 +22,10 @@ defaults:
 
 jobs:
   autobump:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     environment: github-actions
     runs-on: ubuntu-latest
     timeout-minutes: 45
