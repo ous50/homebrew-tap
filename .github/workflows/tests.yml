@@ -26,7 +26,8 @@ jobs:
       - name: Test automation safeguards
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - name: Verify all cask release assets and checksums
-        run: python3 scripts/cask_automation.py verify Casks/maaend.rb Casks/maaend-beta.rb
+        # Every cask must have a SPECS entry, so a new cask cannot skip verification.
+        run: python3 scripts/cask_automation.py verify Casks/*.rb
 
   test-bot:
     name: test-bot (${{ matrix.os }})

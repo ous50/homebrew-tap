@@ -4,8 +4,16 @@ The `brew bump` workflow runs on a 30-minute schedule, on pushes to main, after
 successful `Update README package list` runs on main, and manually. GitHub may
 delay scheduled runs, so the schedule is a fallback rather than a merge deadline.
 It starts from current main, uses each cask's existing livecheck definition, and
-lets `brew bump-cask-pr --write-only` generate versions and all four checksums.
+lets `brew bump-cask-pr --write-only` generate the version and every platform checksum.
 Beta channel selection is unchanged (the existing livecheck also accepts stable releases).
+
+Each automated cask needs an entry in `SPECS` in `scripts/cask_automation.py`:
+`pins` are lines that must appear verbatim (release URL and platform mapping), and
+`assets` maps each `sha256` key to its exact download URL. MaaEnd has four
+platforms. micaGO has three: `arm` and `intel` share one universal dmg (downloaded
+once), plus `x86_64_linux`. Renaming release assets or adding a platform (such as a
+Linux arm64 tarball) needs a manual cask change and a matching `SPECS` update.
+CI verifies every file in `Casks/`, so a cask without an entry fails the checks.
 
 Before creating or refreshing a PR, the workflow clears the global Git HTTP
 authorization header installed by `setup-homebrew`. The PR action configures its
@@ -13,8 +21,8 @@ own repository-local header; keeping both would make GitHub reject fetches and
 pushes with `Duplicate header: "Authorization"` (HTTP 400). The global key is left
 with an empty value so Homebrew's post-job credential cleanup still succeeds.
 
-The fixed branches `automation/maaend` and `automation/maaend-beta` each have at
-most one pending PR. New releases replace the proposed update in that same PR.
+The fixed branches `automation/maaend`, `automation/maaend-beta` and
+`automation/micago` each have at most one pending PR. New releases replace the proposed update in that same PR.
 Base changes refresh the generated branch too. These branches are bot-owned;
 put manual changes on another branch. After merging, the next release opens a
 new PR. Unchanged checks do not create commits or PRs.
@@ -59,16 +67,16 @@ main. It never checks out or executes PR code with the write token. It requires:
 
 - A successful `brew test-bot` PR workflow for the current PR head, with both
   Homebrew jobs and `cask-checks` successful (not skipped).
-- A same-repository PR to main from exactly one of the two automation branches.
-- Exactly one modified cask file, changing only version and four SHA-256 values,
-  with a strictly newer version.
+- A same-repository PR to main from exactly one of the automation branches.
+- Exactly one modified cask file, changing only the version and its `SPECS`
+  SHA-256 values, with a strictly newer version.
 - Current main already included in the branch and a clean, rebaseable PR.
 
 The merge API is given the tested head SHA, so a concurrent head change rejects
 the merge. If main advances, the updater refreshes the pending branch and CI runs
 again. Failed checks, changed app definitions, drafts, or blocked reviews never
-auto-merge. Checks verify downloaded bytes for all four targets; they do not
-install or launch the app. GitHub branch rules still apply.
+auto-merge. Checks verify downloaded bytes for every platform in `SPECS`; they
+do not install or launch the app. GitHub branch rules still apply.
 
 The merger also retries every 30 minutes and supports manual dispatch. This
 handles temporary mergeability delays or a review/check that becomes unblocked

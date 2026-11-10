@@ -15,24 +15,25 @@ import cask_automation as automation
 class CaskAutomationTests(unittest.TestCase):
     def setUp(self):
         self.before = (automation.ROOT / 'Casks/maaend.rb').read_text(encoding='utf-8')
-        version, _ = automation.metadata(self.before)
+        version, _ = automation.metadata('maaend', self.before)
         self.after = self.before.replace(f'version "{version}"', 'version "999.0.0"')
+        self.micago = (automation.ROOT / 'Casks/micago.rb').read_text(encoding='utf-8')
 
     def test_forward_bump_allowed(self):
-        self.assertTrue(automation.bump_only(self.before, self.after))
+        self.assertTrue(automation.bump_only('maaend', self.before, self.after))
 
     def test_manual_code_changes_blocked(self):
         for change in [self.after.replace('auto_updates true', 'auto_updates false'),
                        self.after + '\nsystem "untrusted"\n']:
-            self.assertFalse(automation.bump_only(self.before, change))
+            self.assertFalse(automation.bump_only('maaend', self.before, change))
 
     def test_checksum_only_and_downgrade_blocked(self):
-        self.assertFalse(automation.bump_only(self.before, self.before))
-        self.assertFalse(automation.bump_only(self.after, self.before))
+        self.assertFalse(automation.bump_only('maaend', self.before, self.before))
+        self.assertFalse(automation.bump_only('maaend', self.after, self.before))
 
     def test_all_platforms_required(self):
         with self.assertRaises(ValueError):
-            automation.metadata(self.before.replace('arm64_linux:', 'unsupported:'))
+            automation.metadata('maaend', self.before.replace('arm64_linux:', 'unsupported:'))
 
     def test_beta_ordering(self):
         versions = ['2.1.0-beta.2', '2.1.0-beta.10', '2.1.0', '2.2.0-beta.1']
@@ -42,7 +43,7 @@ class CaskAutomationTests(unittest.TestCase):
         digest = hashlib.sha256(b'asset').hexdigest()
         text = automation.HASH.sub(lambda m: m[1] + f'"{digest}"', self.before)
         with patch.object(automation, 'urlopen', side_effect=lambda *a, **k: io.BytesIO(b'asset')) as fetch:
-            automation.verify(text)
+            automation.verify('maaend', text)
         self.assertEqual(fetch.call_count, 4)
         urls = [call.args[0].full_url for call in fetch.call_args_list]
         self.assertEqual(len(set(urls)), 4)
@@ -50,7 +51,38 @@ class CaskAutomationTests(unittest.TestCase):
     def test_bad_download_blocks_validation(self):
         with patch.object(automation, 'urlopen', return_value=io.BytesIO(b'bad asset')):
             with self.assertRaisesRegex(ValueError, 'Checksum mismatch'):
-                automation.verify(self.before)
+                automation.verify('maaend', self.before)
+
+    def test_unknown_cask_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'Unsupported cask'):
+            automation.metadata('unknown', self.before)
+
+    def test_micago_metadata_matches_its_platforms(self):
+        version, hashes = automation.metadata('micago', self.micago)
+        self.assertRegex(version, r'^\d+\.\d+\.\d+$')
+        self.assertEqual(set(hashes), {'arm', 'intel', 'x86_64_linux'})
+        self.assertEqual(hashes['arm'], hashes['intel'])
+
+    def test_micago_rejects_drifted_url_or_platforms(self):
+        for change in [self.micago.replace('-#{os}.tar.gz', '-#{os}-release.tar.gz'),
+                       self.micago.replace('x86_64_linux:', 'arm64_linux:')]:
+            with self.assertRaises(ValueError):
+                automation.metadata('micago', change)
+
+    def test_micago_bump_and_language_change(self):
+        version, _ = automation.metadata('micago', self.micago)
+        after = self.micago.replace(f'version "{version}"', 'version "999.0.0"')
+        self.assertTrue(automation.bump_only('micago', self.micago, after))
+        self.assertFalse(automation.bump_only('micago', self.micago, after.replace('zh_CN', 'zh_TW')))
+
+    def test_micago_universal_dmg_downloaded_once(self):
+        digest = hashlib.sha256(b'asset').hexdigest()
+        text = automation.HASH.sub(lambda m: m[1] + f'"{digest}"', self.micago)
+        with patch.object(automation, 'urlopen', side_effect=lambda *a, **k: io.BytesIO(b'asset')) as fetch:
+            automation.verify('micago', text)
+        urls = [call.args[0].full_url for call in fetch.call_args_list]
+        self.assertEqual(len(urls), 2)
+        self.assertEqual({url.rsplit('-', 1)[1] for url in urls}, {'Mac.dmg', 'Linux.tar.gz'})
 
     def test_only_current_same_repo_success_is_eligible(self):
         repo = {'full_name': 'ous50/homebrew-tap'}

@@ -13,26 +13,60 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
-CASKS = ('maaend', 'maaend-beta')
 VERSION = re.compile(r'^(  version )"(\d+\.\d+\.\d+(?:-beta\.\d+)?)"$', re.M)
 HASH = re.compile(r'((?:sha256\s+)?\b(arm|intel|arm64_linux|x86_64_linux):\s*)"([0-9a-f]{64})"')
-TARGETS = {
-    'arm': ('macos', 'aarch64', 'dmg'),
-    'intel': ('macos', 'x86_64', 'dmg'),
-    'arm64_linux': ('linux', 'aarch64', 'tar.gz'),
-    'x86_64_linux': ('linux', 'x86_64', 'tar.gz'),
+
+# Per-cask facts the verifier trusts. `pins` must appear verbatim in the cask, so
+# the release URL and platform mapping cannot drift from `assets` unnoticed.
+# `assets` maps every sha256 key to the exact download URL for that platform;
+# platforms sharing one file (a universal dmg) are downloaded once.
+MAAEND = {
+    'pins': (
+        'arch arm: "aarch64", intel: "x86_64"',
+        'os macos: "macos", linux: "linux"',
+        'downloaded_file_format = on_system_conditional macos: "dmg", linux: "tar.gz"',
+        'url "https://github.com/MaaEnd/MaaEnd/releases/download/v#{version}/'
+        'MaaEnd-#{os}-#{arch}-v#{version}.#{downloaded_file_format}"',
+    ),
+    'assets': {
+        'arm': 'https://github.com/MaaEnd/MaaEnd/releases/download/v{version}/MaaEnd-macos-aarch64-v{version}.dmg',
+        'intel': 'https://github.com/MaaEnd/MaaEnd/releases/download/v{version}/MaaEnd-macos-x86_64-v{version}.dmg',
+        'arm64_linux': 'https://github.com/MaaEnd/MaaEnd/releases/download/v{version}/MaaEnd-linux-aarch64-v{version}.tar.gz',
+        'x86_64_linux': 'https://github.com/MaaEnd/MaaEnd/releases/download/v{version}/MaaEnd-linux-x86_64-v{version}.tar.gz',
+    },
 }
-URL_TEMPLATE = 'https://github.com/MaaEnd/MaaEnd/releases/download/v#{version}/MaaEnd-#{os}-#{arch}-v#{version}.#{downloaded_file_format}'
+MICAGO = {
+    'pins': (
+        'os macos: "Mac", linux: "Linux"',
+        'url "https://github.com/cinmou/micaGO/releases/download/v#{version}/micaGO-#{version}-#{os}.dmg"',
+        'url "https://github.com/cinmou/micaGO/releases/download/v#{version}/micaGO-#{version}-#{os}.tar.gz"',
+    ),
+    'assets': {
+        # Universal dmg: both macOS architectures use the same file and checksum.
+        'arm': 'https://github.com/cinmou/micaGO/releases/download/v{version}/micaGO-{version}-Mac.dmg',
+        'intel': 'https://github.com/cinmou/micaGO/releases/download/v{version}/micaGO-{version}-Mac.dmg',
+        'x86_64_linux': 'https://github.com/cinmou/micaGO/releases/download/v{version}/micaGO-{version}-Linux.tar.gz',
+    },
+}
+SPECS = {'maaend': MAAEND, 'maaend-beta': MAAEND, 'micago': MICAGO}
 
 
-def metadata(text):
+def spec(cask):
+    try:
+        return SPECS[cask]
+    except KeyError:
+        raise ValueError(f'Unsupported cask: {cask}') from None
+
+
+def metadata(cask, text):
+    expected = spec(cask)
     versions = VERSION.findall(text)
-    hashes = HASH.findall(text)
-    if len(versions) != 1 or len(hashes) != 4 or {h[1] for h in hashes} != set(TARGETS):
-        raise ValueError('Expected one version and exactly four platform checksums')
-    if f'url "{URL_TEMPLATE}"' not in text:
-        raise ValueError('Unexpected release URL; update the verifier before enabling automation')
-    return versions[0][1], {key: value for _, key, value in hashes}
+    keys = [key for _, key, _ in HASH.findall(text)]
+    if len(versions) != 1 or sorted(keys) != sorted(expected['assets']):
+        raise ValueError(f'Expected one version and checksums for exactly: {", ".join(sorted(expected["assets"]))}')
+    if any(pin not in text for pin in expected['pins']):
+        raise ValueError('Unexpected release URL or platform mapping; update SPECS before enabling automation')
+    return versions[0][1], {key: value for _, key, value in HASH.findall(text)}
 
 
 def version_key(version):
@@ -40,9 +74,9 @@ def version_key(version):
     return (*map(int, main.split('.')), 0 if beta else 1, int(beta or 0))
 
 
-def bump_only(before, after):
-    old, _ = metadata(before)
-    new, _ = metadata(after)
+def bump_only(cask, before, after):
+    old, _ = metadata(cask, before)
+    new, _ = metadata(cask, after)
 
     def normalized(text):
         return HASH.sub(lambda m: m[1] + '"HASH"', VERSION.sub(r'\1"VERSION"', text))
@@ -50,26 +84,31 @@ def bump_only(before, after):
     return version_key(new) > version_key(old) and normalized(before) == normalized(after)
 
 
-def verify(text):
-    version, hashes = metadata(text)
-    for key, (platform, arch, suffix) in TARGETS.items():
-        url = f'https://github.com/MaaEnd/MaaEnd/releases/download/v{version}/MaaEnd-{platform}-{arch}-v{version}.{suffix}'
-        digest = hashlib.sha256()
-        # Public downloads: never forward credentials to release asset hosts.
-        with urlopen(Request(url, headers={'User-Agent': 'homebrew-tap-ci'}), timeout=120) as response:
-            while chunk := response.read(1024 * 1024):
-                digest.update(chunk)
-        if digest.hexdigest() != hashes[key]:
-            raise ValueError(f'Checksum mismatch: {key} {version}')
-        print(f'Verified {key} {version}', flush=True)
+def sha256_of(url):
+    digest = hashlib.sha256()
+    # Public downloads: never forward credentials to release asset hosts.
+    with urlopen(Request(url, headers={'User-Agent': 'homebrew-tap-ci'}), timeout=120) as response:
+        while chunk := response.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify(cask, text):
+    version, hashes = metadata(cask, text)
+    digests = {}
+    for key, template in spec(cask)['assets'].items():
+        url = template.format(version=version)
+        if url not in digests:
+            digests[url] = sha256_of(url)
+        if digests[url] != hashes[key]:
+            raise ValueError(f'Checksum mismatch: {cask} {key} {version}')
+        print(f'Verified {cask} {key} {version}', flush=True)
 
 
 def prepare(cask, tap):
-    if cask not in CASKS:
-        raise ValueError('Unsupported cask')
     path = ROOT / 'Casks' / f'{cask}.rb'
     before = path.read_text(encoding='utf-8')
-    current, _ = metadata(before)
+    current, _ = metadata(cask, before)
     result = subprocess.check_output(
         ['brew', 'livecheck', '--cask', '--json', f'{tap}/{cask}'], text=True,
     )
@@ -85,10 +124,10 @@ def prepare(cask, tap):
             check=True,
         )
         after = path.read_text(encoding='utf-8')
-        if not bump_only(before, after):
+        if not bump_only(cask, before, after):
             raise ValueError('Bump changed more than version/checksums')
         # Homebrew downloads assets to generate hashes. Independent verification runs in PR CI.
-        current, _ = metadata(after)
+        current, _ = metadata(cask, after)
     with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         output.write(f'version={current}\n')
 
@@ -120,7 +159,7 @@ def eligible(pr, run, repository):
         and pr['base']['repo']['full_name'] == repository
         and pr['head']['repo']['full_name'] == repository
         and run['head_repository']['full_name'] == repository
-        and pr['head']['ref'] in {f'automation/{c}' for c in CASKS}
+        and pr['head']['ref'] in {f'automation/{c}' for c in SPECS}
         and pr['head']['ref'] == run['head_branch']
         and pr['head']['sha'] == run['head_sha']
         and run['event'] == 'pull_request' and run['conclusion'] == 'success'
@@ -157,7 +196,7 @@ def merge_run(run):
     if comparison['behind_by'] != 0:
         print('main advanced; the updater will refresh this PR and run new checks.')
         return
-    if not bump_only(read_file(path, base), read_file(path, head)):
+    if not bump_only(cask, read_file(path, base), read_file(path, head)):
         raise ValueError('PR includes changes beyond a forward version/checksum bump')
     # Respect pending checks and review requirements, including for an admin-owned PAT.
     pr = api(f'pulls/{number}')
@@ -181,7 +220,7 @@ def merge():
         return
     # Reconcile after transient merge blockers, without creating new commits or PRs.
     owner = os.environ['GITHUB_REPOSITORY'].split('/')[0]
-    for cask in CASKS:
+    for cask in SPECS:
         query = urlencode({'state': 'open', 'base': 'main', 'head': f'{owner}:automation/{cask}'})
         prs = api(f'pulls?{query}')
         if len(prs) != 1:
@@ -198,7 +237,8 @@ if __name__ == '__main__':
         prepare(*sys.argv[2:])
     elif command == 'verify':
         for filename in sys.argv[2:]:
-            verify(Path(filename).read_text(encoding='utf-8'))
+            path = Path(filename)
+            verify(path.stem, path.read_text(encoding='utf-8'))
     elif command == 'merge':
         merge()
     else:
