@@ -7,7 +7,7 @@ on:
       - main
   # README commits use GITHUB_TOKEN, so their pushes do not trigger this workflow.
   workflow_run:
-    workflows: ['Update README package list']
+    workflows: ["Update README package list"]
     types: [completed]
     branches: [main]
   schedule:
@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cask: [maaend, maaend-beta]
+        cask: [maaend, maaend-beta, micago]
     concurrency:
       group: cask-update-${{ matrix.cask }}
       cancel-in-progress: false
@@ -84,8 +84,8 @@ jobs:
           base: main
           branch: automation/${{ matrix.cask }}
           add-paths: Casks/${{ matrix.cask }}.rb
-          commit-message: '${{ matrix.cask }} ${{ steps.update.outputs.version }}'
-          title: '${{ matrix.cask }} ${{ steps.update.outputs.version }}'
+          commit-message: "${{ matrix.cask }} ${{ steps.update.outputs.version }}"
+          title: "${{ matrix.cask }} ${{ steps.update.outputs.version }}"
           body: |
             Generated from current main using Homebrew livecheck and bump-cask-pr.
             New releases refresh this PR while it remains open.
