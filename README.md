@@ -8,7 +8,7 @@ Homebrew tap maintained by [ous50](https://github.com/ous50).
 | Cask | Version | Description | Platforms | Homepage |
 | --- | --- | --- | --- | --- |
 | [`maaend-beta`](Casks/maaend-beta.rb) | `3.1.0` | An Arknights:Endfield automation helper based on vision AI, in beta version. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
-| [`maaend`](Casks/maaend.rb) | `3.0.0` | An Arknights:Endfield automation helper based on vision AI. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
+| [`maaend`](Casks/maaend.rb) | `3.1.0` | An Arknights:Endfield automation helper based on vision AI. | macOS, Linux | [Homepage](https://github.com/MaaEnd/MaaEnd) |
 | [`micago`](Casks/micago.rb) | `0.94.1` | Self-hosted iMessage bridge | macOS, Linux | [Homepage](https://github.com/cinmou/micaGO) |
 <!-- END GENERATED CASKS -->
 
