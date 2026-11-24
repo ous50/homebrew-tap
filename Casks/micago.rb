@@ -1,10 +1,10 @@
 cask "micago" do
   os macos: "Mac", linux: "Linux"
 
-  version "0.94.1"
-  sha256 arm:          "6fce22caac2dddc6c83e121aabf59e77492dbe2fe1bf57731086de9632b1d232",
-         intel:        "6fce22caac2dddc6c83e121aabf59e77492dbe2fe1bf57731086de9632b1d232",
-         x86_64_linux: "3654e5b42e52d37bee01ee77ab3f46713333735366e1d2e2cd2c72c3582fbd17"
+  version "0.96.0"
+  sha256 arm:          "f1a4505d155a6d7ff855283bdc98916fb7d51e114122842d7731aae01bb102ac",
+         intel:        "f1a4505d155a6d7ff855283bdc98916fb7d51e114122842d7731aae01bb102ac",
+         x86_64_linux: "ded4802ad81e4f26b5fb8738590c40d7eb8e632e20a8b371a4f8bd1ff7ba12ab"
 
   on_macos do
     url "https://github.com/cinmou/micaGO/releases/download/v#{version}/micaGO-#{version}-#{os}.dmg"
